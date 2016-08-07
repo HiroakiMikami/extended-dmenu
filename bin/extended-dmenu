@@ -1,0 +1,44 @@
+#! /usr/bin/env node
+
+// Require modules
+const commander = require("commander");
+const fs = require("fs");
+const Promise = require('bluebird');
+const ExtendedDmenu = require('../lib/main.js').ExtendedDmenu;
+
+const os = require('os')
+
+const DEFAULT_CONFIGURATION_FILE_PATH = `${os.homedir()}/.extended-dmenurc`
+
+let command = "";
+
+commander
+  .version('0.0.0')
+  .option('-f <file>', 'Configuration file path')
+  .arguments("<command>")
+  .action((cmd) => {
+    command = cmd
+  })
+  .parse(process.argv);
+
+const configFile = commander.file || DEFAULT_CONFIGURATION_FILE_PATH
+
+new Promise((resolve, reject) => {
+  fs.stat(configFile, (err) => {
+    if (err) resolve({})
+    else {
+      fs.readFile(configFile, 'utf8', (err, data) => {
+        if (err) reject(err)
+        else resolve(JSON.parse(data))
+      })
+    }
+  })
+}).then((config) => {
+  const dmenu = new ExtendedDmenu(config)
+
+  if (command === "update") {
+    dmenu.update()
+  } else {
+    dmenu.open()
+  }
+})
